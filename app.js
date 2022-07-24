@@ -1,4 +1,3 @@
-require('dotenv').config()
 const mongoose = require("mongoose");
 const express = require("express");
 const bodyParser = require("body-parser");
@@ -7,7 +6,6 @@ const session = require('express-session')
 const passportLocalMongoose = require('passport-local-mongoose');
 const passport = require('passport');
 const { Schema, model } = mongoose;
-
 
 
 const app = express();
@@ -21,7 +19,6 @@ app.use(session({
   secret: 'keyboard cat',
   resave: false,
   saveUninitialized: true
-  // cookie: { secure: true }
 }))
 
 app.use(passport.initialize());
@@ -39,10 +36,6 @@ userSchema.plugin(passportLocalMongoose);
 const userdata = model("User", userSchema);
 
 passport.use(userdata.createStrategy());
-
-// use static serialize and deserialize of model for passport session support
-// passport.serializeUser(userdata.serializeUser());
-// passport.deserializeUser(userdata.deserializeUser());
 
 passport.serializeUser(function(user, done) {
   done(null, user);
@@ -77,7 +70,7 @@ app.get('/logout', function(req, res){
   req.logout(function(err) {
     if (err){ console.log(err); }
     else{
-    res.clearCookie('connect.sid');
+      delete req.userdata;
     res.redirect('/');
   }
   });
@@ -92,7 +85,7 @@ app.post("/register", (req, res) => {
     }
     else {
       passport.authenticate("local")(req, res, function () {
-        res.redirect("/secrets")
+      res.redirect("/secrets")
       })
     }
   })
@@ -105,9 +98,16 @@ app.post("/login", (req, res) => {
   });
 
   req.login(user, function(err) {
-    if (err) { console.log(err); }
-    else res.redirect("/secrets");
+    if (err) {
+      console.log(err);
+      res.redirect("/secrets") }
+    else {
+      passport.authenticate("local")(req, res, function () {
+      res.redirect("/secrets")
+    })
+    }
   });
+
 
 
 });
